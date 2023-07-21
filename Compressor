@@ -1,0 +1,135 @@
+import numpy as np
+from numpy.fft import fft2, ifft2
+
+import matplotlib.image as mpimg
+import matplotlib.pyplot as plt
+
+img = mpimg.imread('image_brad.jpg')
+
+from skimage.color import rgb2gray
+img_gray = rgb2gray(img)
+
+def compress(A, J):
+    # Note: we assume input is black-and-white, or a slice A(:,:,i) of a rgb image
+
+    Ahat = fft2(A)
+    Chat = Ahat # This will eventually become just 4J^2 coefficients from Ahat
+
+    # A, and therefore also Chat, are n x m matrices
+    # Ie., n rows and m columns
+    # Ie., a 'height' of n, and a 'width' of m
+    # Chat.shape[0] is this height of Chat, n; Chat.shape[1] is the width of Chat, m
+
+    n = Ahat.shape[0]
+    m = Ahat.shape[1]
+    
+    if J == int(J) and 0 < J < min(n,m) / 2: # If j is an integer between 0 and min(n,m) / 2 (exclusive)
+        pass
+    else:
+        raise Exception('Invalid J')
+
+    for i in range(J+1, n-(J-1)): # i = J + 1, i = J + 2 ... i = (n - (J - 1)) - 1; ie., the 'middle elements' that we set to zero
+        for j in range(0, m): # For all j; ie., j = 0, j = 1 ... j = m-1
+            Chat[i,j] = 0
+
+    for j in range(J+1, m-(J-1)): # j = J + 1, j = J + 2 ... j = (m - (J - 1)) - 1, ie., the 'middle elements' that we set to zero
+        for i in range(0, n): # For all i; ie., i = 0, i = 1 ... i = n-1
+            Chat[i,j] = 0
+
+    C = np.real(ifft2(Chat)) # Only interested in real part
+    return C
+
+J = 1
+Cplot = plt.imshow(compress(img_gray, J))
+
+J = 20
+Cplot = plt.imshow(compress(img_gray, J))
+
+J = 100
+Cplot = plt.imshow(compress(img_gray, J))
+
+J = 297
+Cplot = plt.imshow(compress(img_gray, J))
+
+import numpy as np
+from numpy.fft import fft2, ifft2
+
+import matplotlib.image as mpimg
+import matplotlib.pyplot as plt
+
+img = mpimg.imread('image_brad.jpg')
+
+from skimage.color import rgb2gray
+img_gray = rgb2gray(img)
+
+# Inputs are: A, an image; J = coefficients in each block; D = size of blocks
+
+def compress_v2(A, J, D):
+        
+    N = len(A) # Number of rows in matrix A
+    M = len(A[0]) # Number of columns in matrix A
+    
+    C = np.zeros_like(A)
+    
+    total_coefficients = 0 # Counter for no. non-zero terms
+
+    for i in range(1, N//D+2): # i = 1, i = 2 ... i = N - 1; ie., i is the row no.
+        for j in range(1, M//D+2): # j = 1, j = 2 ... j = M - 1; ie., j is the col. no.
+            Aij = A[(i-1)*D:D+(i-1)*D, (j-1)*D:D+(j-1)*D]
+
+            Ahat = fft2(Aij)
+            Chat = Ahat # This will eventually become just 4J^2 coefficients from Ahat
+
+            # A, and therefore also Chat, are n x m matrices
+            # Ie., n rows and m columns
+            # Ie., a 'height' of n, and a 'width' of m
+            # Chat.shape[0] is this height of Chat, n; Chat.shape[1] is the width of Chat, m
+
+            n = Ahat.shape[0]
+            m = Ahat.shape[1]
+
+            for k in range(J+1, n-(J-1)):
+                for l in range(0, m):
+                    Chat[k,l] = 0
+
+            for l in range(J+1, m-(J-1)):
+                for k in range(0, n):
+                    Chat[k,l] = 0
+
+            comp = np.real(ifft2(Chat)) # Only interested in real part
+            zeros = np.zeros_like(A)
+            zeros[(i-1)*D:D+(i-1)*D, (j-1)*D:D+(j-1)*D] = comp
+            C += zeros
+
+            total_coefficients += 4 * J ** 2
+
+    return C, total_coefficients
+
+J = 5
+
+D = 25
+C, total_coefficients = compress_v2(img_gray, J, D)
+Cplot = plt.imshow(C)
+plt.show()
+print('total_coefficients when J =', J, 'and D =', D, '(above) is', total_coefficients)
+
+D = 50
+C, total_coefficients = compress_v2(img_gray, J, D)
+Cplot = plt.imshow(C)
+plt.show()
+print('total_coefficients when J =', J, 'and D =', D, '(above) is', total_coefficients)
+
+D = 100
+C, total_coefficients = compress_v2(img_gray, J, D)
+Cplot = plt.imshow(C)
+plt.show()
+print('total_coefficients when J =', J, 'and D =', D, '(above) is', total_coefficients)
+
+D = 250
+C, total_coefficients = compress_v2(img_gray, J, D)
+Cplot = plt.imshow(C)
+plt.show()
+print('total_coefficients when J =', J, 'and D =', D, '(above) is', total_coefficients)
+
+J = 5
+Cplot = plt.imshow(compress(img_gray, J))
